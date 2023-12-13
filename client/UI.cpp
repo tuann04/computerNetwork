@@ -11,7 +11,9 @@
 #include <WS2tcpip.h>
 #pragma comment (lib, "ws2_32.lib")
 
-void broadcastC(char *ip, std::vector < std::string> &listIP,std::vector < std::string> &listName) {
+std::set < std::pair<std::string, std::string>> list;
+
+void broadcastC(char *ip) {
 	WSADATA wsaData;
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
 	sockaddr_in serverHint;
@@ -49,17 +51,8 @@ void broadcastC(char *ip, std::vector < std::string> &listIP,std::vector < std::
 		std::string tmpIP(tmpIPbuf);
 		std::string tmpName(recvBuf);
 		//add server to list
-		int listLen = listIP.size();
-		bool isInList = false;
-		for (int i = 0; i < listLen; i++) {
-			if (listIP[i] == tmpIP) {
-				isInList == true;
-				break;
-			}
-		}
-		if (isInList == true) continue;
-		listIP.push_back(tmpIP);
-		listName.push_back(tmpName);
+		std::pair<std::string, std::string> tmp(tmpIP, tmpName);
+		list.insert(tmp);
 	}
 
 }
@@ -94,8 +87,7 @@ void freeUI() {
 }
 
 void displayConnectPanel() {
-	std::vector < std::string> listIP;
-	std::vector < std::string> listName;
+
 	ImGui_ImplSDLRenderer2_NewFrame();
 	ImGui_ImplSDL2_NewFrame(window);
 	ImGui::NewFrame();
@@ -117,16 +109,18 @@ void displayConnectPanel() {
 			}
 		}
 		if (ImGui::Button("Discover Servers")) {
-			broadcastC(ip, listIP, listName);
+			broadcastC(ip);
 			std::cout << "Active servers:\n";
-			for (int i = 0; i < listIP.size(); i++) {
-				std::cout << listIP[i] <<	 " : " << listName[i] << "\n";
+			for (auto p : list) {
+				std::cout << p.first << " : " << p.second << "\n";
 			}
 		}
-		//for (int i = 0; i < listIP.size(); i++) {
-		//	ImGui::Text(listIP[i].c_str());
-		//	ImGui::Text(listName[i].c_str());
-		//}
+
+		for (auto p : list) {
+			ImGui::Text(p.first.c_str());
+			ImGui::Text(p.second.c_str());
+		}
+
 		if (ImGui::Button("Exit")) {
 			state = State::QUIT;
 		}
