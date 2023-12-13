@@ -41,11 +41,9 @@ void broadcastC(char *ip, std::vector < std::string> &listIP,std::vector < std::
 		char recvBuf[100]{ 0 };
 		int recvBufLen = 100;
 		if (recvfrom(sock, recvBuf, recvBufLen, 0, (sockaddr*)&recvAddr, &recvAddrLen) == SOCKET_ERROR) {
-			//std::cout << "error at recvfrom()\n";
 			continue;
 		}
 		max_attempt += 10;
-		//std::cout << "received " << recvBuf << "\n";
 		char tmpIPbuf[20]{ 0 };
 		inet_ntop(AF_INET, &recvAddr.sin_addr, tmpIPbuf, 20);
 		std::string tmpIP(tmpIPbuf);
@@ -54,11 +52,8 @@ void broadcastC(char *ip, std::vector < std::string> &listIP,std::vector < std::
 		int listLen = listIP.size();
 		bool isInList = false;
 		for (int i = 0; i < listLen; i++) {
-			//std::cout << "listIP" << i << " : " << listIP[i] << "\n";
-			//std::cout << "tmpIP : " << tmpIP << "\n\n";
 			if (listIP[i] == tmpIP) {
 				isInList == true;
-				//std::cout << "break from i = " << i << "\n";
 				break;
 			}
 		}

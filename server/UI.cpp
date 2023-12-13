@@ -14,10 +14,6 @@
 
 void broadcastS() {
     SOCKET in = socket(AF_INET, SOCK_DGRAM, 0);
-    struct timeval tv;
-    tv.tv_sec = 10;  // 1 second timeout
-    tv.tv_usec = 0;
-    //setsockopt(in, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
     sockaddr_in serverHint;
     ZeroMemory(&serverHint, sizeof(serverHint));
     serverHint.sin_addr.S_un.S_addr = ADDR_ANY;
@@ -34,7 +30,6 @@ void broadcastS() {
     std::cout << "waiting for name req from client broadcast.\n";
     while (connectionState != ConnectionState::CONNECTED)
     {
-        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
         ZeroMemory(&client, clientLength);
         ZeroMemory(buf, 1024);
         int bytesIn = recvfrom(in, buf, 1024, 0, (sockaddr*)&client, &clientLength);
@@ -49,7 +44,6 @@ void broadcastS() {
         std::cout << "Message recv from " << clientIp << " : " << buf << "\n";
         char computerName[100]{ 0 };
         gethostname(computerName, 100);
-        //for (int i = 0; i < 5; i++)
         sendto(in, computerName, strlen(computerName) + 1, 0, (sockaddr*)&client, clientLength);
     }
     closesocket(in);
