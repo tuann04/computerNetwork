@@ -117,7 +117,7 @@ void displayConnectMenu() {
                 waitingForConnectionThread.detach();
 
                 std::thread broadcastThread(broadcastS);
-                broadcastThread.join();
+                broadcastThread.detach();
             }
         }
     }
