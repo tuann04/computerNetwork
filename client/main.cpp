@@ -31,8 +31,9 @@ SDL_Rect screenRect;
 
 SOCKET imageSocket, mouseSocket, keyboardSocket;
 
-State state = State::CONNECT_MENU;
+State state = State::DISPLAY_CONNECT_MENU;
 ConnectionState connectState = ConnectionState::NOT_YET;
+DiscoverState discoverState = DiscoverState::NOT_YET;
 
 int main(int argc, char** argv) {
     initUI();
@@ -46,11 +47,11 @@ int main(int argc, char** argv) {
         }
 
         switch (state) {
-        case State::CONNECT_MENU:
-            displayConnectPanel();
+        case State::DISPLAY_CONNECT_MENU:
+            displayConnectMenu();
             break;
 
-        case State::INIT_CONTENT:
+        case State::START_THREADS:
             getServerScreenResolution();
 
             initClientSocket(mouseSocket, ip, mousePort);

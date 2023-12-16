@@ -22,3 +22,4 @@ extern SDL_Rect screenRect;
 
 extern State state;
 extern ConnectionState connectState;
+extern DiscoverState discoverState;

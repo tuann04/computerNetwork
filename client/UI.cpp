@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "UI.h"
 #include "imgui_impl_sdlrenderer2.h"
 #include "imgui_impl_sdl2.h"
@@ -11,7 +12,12 @@
 #include <WS2tcpip.h>
 #pragma comment (lib, "ws2_32.lib")
 
-std::set < std::pair<std::string, std::string>> list;
+std::set < std::pair<std::string, std::string>> serversSet;
+
+char** ipList;
+char** hostnameList;
+char** ipAndHostnameList;
+int currentItem = 0;
 
 void broadcastC(char *ip) {
 	WSADATA wsaData;
@@ -50,9 +56,9 @@ void broadcastC(char *ip) {
 		inet_ntop(AF_INET, &recvAddr.sin_addr, tmpIPbuf, 20);
 		std::string tmpIP(tmpIPbuf);
 		std::string tmpName(recvBuf);
-		//add server to list
+		//add server to serversSet
 		std::pair<std::string, std::string> tmp(tmpIP, tmpName);
-		list.insert(tmp);
+		serversSet.insert(tmp);
 	}
 
 }
@@ -86,7 +92,25 @@ void freeUI() {
 	SDL_Quit();
 }
 
-void displayConnectPanel() {
+void createServersList() {
+	ipList = new char* [serversSet.size()];
+	hostnameList = new char* [serversSet.size()];
+	ipAndHostnameList = new char* [serversSet.size()];
+	int i = 0;
+	for (auto item : serversSet) {
+		ipList[i] = new char[item.first.length() + 1];
+		strcpy(ipList[i], item.first.c_str());
+		hostnameList[i] = new char[item.second.length() + 1];
+		strcpy(hostnameList[i], item.second.c_str());
+		ipAndHostnameList[i] = new char[item.first.length() + item.second.length() + 3];
+		strcpy(ipAndHostnameList[i], item.second.c_str());
+		strcat(ipAndHostnameList[i], " - ");
+		strcat(ipAndHostnameList[i], item.first.c_str());
+		i++;
+	}
+}
+
+void displayConnectMenu() {
 
 	ImGui_ImplSDLRenderer2_NewFrame();
 	ImGui_ImplSDL2_NewFrame(window);
@@ -96,40 +120,45 @@ void displayConnectPanel() {
 
     if (ImGui::Begin("Connect to server", NULL, ImGuiWindowFlags_NoResize)) {
 
-		ImGui::Text("Server's IP address:");
+		ImGui::Text("Brodcast address:");
 
 		ImGui::InputText("##IP", ip, IM_ARRAYSIZE(ip));
 
-        if (ImGui::Button("Connect")) {
-            if (initClientSocket(imageSocket, ip, imagePort)) {
-				connectState = ConnectionState::SUCCESS;
-			}
-            else {
-				connectState = ConnectionState::FAIL;
-			}
-		}
 		if (ImGui::Button("Discover Servers")) {
 			broadcastC(ip);
+			createServersList();
+			discoverState = DiscoverState::SUCCESS;
 			std::cout << "Active servers:\n";
-			for (auto p : list) {
+			for (auto p : serversSet) {
 				std::cout << p.first << " : " << p.second << "\n";
 			}
-		}
-
-		for (auto p : list) {
-			ImGui::Text(p.first.c_str());
-			ImGui::Text(p.second.c_str());
 		}
 
 		if (ImGui::Button("Exit")) {
 			state = State::QUIT;
 		}
-		if (connectState == ConnectionState::FAIL) {
-			ImGui::Text("Invalid IP address!");
+
+		if (discoverState == DiscoverState::SUCCESS) {
+			ImGui::Combo("##MyDynamicCombo", &currentItem, ipAndHostnameList, static_cast<int>(serversSet.size()));
+
+			if (ImGui::Button("Connect")) {
+				strcpy(ip, ipList[currentItem]);
+				if (initClientSocket(imageSocket, ip, imagePort)) {
+					connectState = ConnectionState::SUCCESS;
+				}
+				else {
+					connectState = ConnectionState::FAIL;
+				}
+			}
+
+			if (connectState == ConnectionState::FAIL) {
+				ImGui::Text("Invalid IP address!");
+			}
+			else if (connectState == ConnectionState::SUCCESS) {
+				state = State::START_THREADS;
+			}
 		}
-		else if (connectState == ConnectionState::SUCCESS) {
-			state = State::INIT_CONTENT;
-		}
+		
 	}
 	ImGui::End();
 
@@ -164,14 +193,10 @@ void renderImage(cv::Mat image) {
 
 	SDL_DestroyTexture(texture);
 	SDL_FreeSurface(surface);
-
-	std::this_thread::sleep_for(std::chrono::milliseconds(0));
 }
 
 void receiveAndDisplayImage() {
     while (state != State::QUIT) {
-		auto start = std::chrono::high_resolution_clock::now();
-
 		cv::Mat image = receiveImage();
 
         renderImage(image);
@@ -179,9 +204,5 @@ void receiveAndDisplayImage() {
 		renderControlPanel();
 
 		SDL_RenderPresent(renderer);
-
-		auto stop = std::chrono::high_resolution_clock::now();
-		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-		std::cout << "FPS: " << 1000.0 / duration.count() << "\n";
 	}
 }

@@ -11,7 +11,6 @@
 #include <iostream>
 #pragma comment (lib, "ws2_32.lib")
 
-
 void broadcastS() {
     SOCKET in = socket(AF_INET, SOCK_DGRAM, 0);
     sockaddr_in serverHint;
@@ -104,10 +103,14 @@ void displayConnectMenu() {
         }
 
         if (bindingState == BindingState::FAILED) {
+            ImGui::Separator();
             ImGui::Text("Initialize failed!");
         }
 
         if (bindingState == BindingState::BOUND) {
+            
+            ImGui::Separator(); 
+
             ImGui::Text("Initialize success!");
             ImGui::Text("Waiting for client...");
 
@@ -117,10 +120,15 @@ void displayConnectMenu() {
                 waitingForConnectionThread.detach();
 
                 std::thread broadcastThread(broadcastS);
-                broadcastThread.join();
+                broadcastThread.detach();
             }
         }
+        ImGui::Separator();
+        if (ImGui::Button("Exit")) {
+            state = State::QUIT;
+        }
     }
+
     ImGui::End();
 
     ImGui::Render();
