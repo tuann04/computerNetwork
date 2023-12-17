@@ -6,6 +6,7 @@ enum class State {
 	START_THREADS,
 	DISPLAY_IMAGE,
 	QUIT,
+	STOP,
 };
 
 enum class ConnectionState {

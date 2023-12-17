@@ -19,26 +19,34 @@ void serializeEvent(const MouseEvent& event, char* buffer) {
     buffer[16] = event.move;
 }
 
+
 HHOOK MouseHookHandle;
 void printEvent(const MouseEvent& event) {
-    std::cout << "Mouse X: " << event.mouseX << std::endl;
-    std::cout << "Mouse Y: " << event.mouseY << std::endl;
-    std::cout << "Mouse Wheel Delta: " << event.mouseWheelDelta << std::endl;
-    std::cout << "Left Mouse Down: " << event.leftMouseDown << std::endl;
-    std::cout << "Right Mouse Down: " << event.rightMouseDown << std::endl;
-    std::cout << "Middle Mouse Down: " << event.middleMouseDown << std::endl;
-    std::cout << "Double Click: " << event.doubleClick << std::endl;
-    std::cout << "Move: " << event.move << std::endl;
-    std::cout << std::endl;
+    //std::cout << "Mouse X: " << event.mouseX << std::endl;
+    //std::cout << "Mouse Y: " << event.mouseY << std::endl;
+    //std::cout << "Mouse Wheel Delta: " << event.mouseWheelDelta << std::endl;
+    //std::cout << "Left Mouse Down: " << event.leftMouseDown << std::endl;
+    //std::cout << "Right Mouse Down: " << event.rightMouseDown << std::endl;
+    //std::cout << "Middle Mouse Down: " << event.middleMouseDown << std::endl;
+    //std::cout << "Double Click: " << event.doubleClick << std::endl;
+    //std::cout << "Move: " << event.move << std::endl;
+    //std::cout << std::endl;
+    std::cout << "mouse event detected\n";
 }
 
 
 LRESULT CALLBACK MouseHook(int code, WPARAM wParam, LPARAM lParam) {
+    if (state == State::STOP) {
+        PostQuitMessage(0);
+        UnhookWindowsHookEx(MouseHookHandle);
+        std::cout << "unhooked mouse\n";
+        return 0;
+    }
     const double screenRatio = serverScreenWidth * 1.0 / screenWidth;
     if (code == HC_ACTION) {
         MSLLHOOKSTRUCT* ms = (MSLLHOOKSTRUCT*)lParam;
         char buffer[BUF_SIZE];
-        std::cout << wParam << std::endl;
+        //std::cout << wParam << std::endl;
         MouseEvent event;
 
         switch (wParam) {
@@ -78,7 +86,6 @@ LRESULT CALLBACK MouseHook(int code, WPARAM wParam, LPARAM lParam) {
 
         // Serialize the event and send it to the server
         serializeEvent(event, buffer);
-
         int sent;
         do {
             sent = send(mouseSocket, buffer, BUF_SIZE, 0);
@@ -121,10 +128,12 @@ void sendMouseEvents() {
 	}
 
 	MSG msg;
-    while (state != State::QUIT && GetMessage(&msg, NULL, 0, 0) != 0) {
+    while(state == State::DISPLAY_IMAGE && GetMessage(&msg, NULL, 0, 0) != 0) {
+        std::cout << "mouseeeeeeeeeeeeeeeeeeee\n";
+        //GetMessage(&msg, NULL, 0, 0);
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
-
-	UnhookWindowsHookEx(MouseHookHandle);
+    std::cout << "mouse quit\n";
+	//UnhookWindowsHookEx(MouseHookHandle);
 }

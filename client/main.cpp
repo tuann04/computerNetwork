@@ -73,13 +73,28 @@ int main(int argc, char** argv) {
 
         case State::DISPLAY_IMAGE: break;
 
+        case State::STOP:
+            //wait for all thread shut down
+            std::this_thread::sleep_for(std::chrono::seconds(3));
+            WSACleanup();
+            closesocket(imageSocket);
+            closesocket(mouseSocket);
+            closesocket(keyboardSocket);
+            std::cout << "clean up tranmission data.\n";
+            freeUI();
+            SDL_Quit();
+            initUI();
+            state = State::DISPLAY_CONNECT_MENU;
+            connectState = ConnectionState::NOT_YET;
+            discoverState = DiscoverState::NOT_YET;
+            break;
         default:
             break;
         }
     }
 
     freeUI();
-
+    SDL_Quit();
     WSACleanup();
     closesocket(imageSocket);
     closesocket(mouseSocket);

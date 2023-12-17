@@ -64,6 +64,7 @@ void broadcastC(char *ip) {
 }
 
 void initUI() {
+	serversSet.clear();
 	SDL_Init(SDL_INIT_VIDEO);
 
 	const double scale = 1;
@@ -175,9 +176,16 @@ void renderControlPanel() {
 
     ImGui::SetNextWindowSize(ImVec2(200, 100));
     if (ImGui::Begin("Control Panel", NULL, ImGuiWindowFlags_NoResize)) {
-        if (ImGui::Button("Exit")) {
-			state = State::QUIT;
-        }
+		if (state == State::DISPLAY_IMAGE) {
+			if (ImGui::Button("STOP")) {
+				state = State::STOP;
+			}
+		}
+		else {
+			if (ImGui::Button("CONTINUE")) {
+				state = State::DISPLAY_IMAGE;
+			}
+		}
     }
     ImGui::End();
 
@@ -196,13 +204,15 @@ void renderImage(cv::Mat image) {
 }
 
 void receiveAndDisplayImage() {
-    while (state != State::QUIT) {
+    while (state == State::DISPLAY_IMAGE) {
 		cv::Mat image = receiveImage();
 
-        renderImage(image);
+		renderImage(image);
 
 		renderControlPanel();
 
 		SDL_RenderPresent(renderer);
 	}
+	sendImageACK();
+	std::cout << "image quit\n";
 }

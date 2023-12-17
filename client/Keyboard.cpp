@@ -22,12 +22,19 @@ void serializeEvent(const KeyEvent& event, char* buffer) {
 HHOOK keyboardHookHandle;
 
 LRESULT CALLBACK keyboardHook(int code, WPARAM wParam, LPARAM lParam) {
+    if (state == State::STOP) {
+        UnhookWindowsHookEx(keyboardHookHandle);
+        std::cout << "unhooked keyboard\n";
+        PostQuitMessage(0);
+        return 0;
+    }
     static bool ctrlPressed = false;
     static bool shiftPressed = false;
     static bool altPressed = false;
     static bool winPressed = false;
 
     if (code == HC_ACTION) {
+        std::cout << "keyboard event detected\n";
         KBDLLHOOKSTRUCT* kb = (KBDLLHOOKSTRUCT*)lParam;
         char buffer[BUF_SIZE];
 
@@ -137,10 +144,12 @@ void sendKeyboardEvents() {
 	}
 
 	MSG msg;
-    while (state != State::QUIT && GetMessage(&msg, NULL, 0, 0) != 0) {
+    while(state == State::DISPLAY_IMAGE&& GetMessage(&msg, NULL, 0, 0) != 0) {
+        std::cout << "keyboardddddddddddddddddddddddddddddddddddddddddd\n";
+        //GetMessage(&msg, NULL, 0, 0);
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
-
-	UnhookWindowsHookEx(keyboardHookHandle);
+    std::cout << "keyboard quit\n";
+	//UnhookWindowsHookEx(keyboardHookHandle);
 }
