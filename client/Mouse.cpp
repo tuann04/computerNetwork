@@ -7,6 +7,8 @@
 #include <thread>
 
 const int BUF_SIZE = 20;
+int LCD = -1;
+MouseEvent mouseEvent;
 
 void serializeEvent(const MouseEvent& event, char* buffer) {
     memcpy(&buffer[0], &(event.mouseX), sizeof(event.mouseX));
@@ -19,77 +21,70 @@ void serializeEvent(const MouseEvent& event, char* buffer) {
     buffer[16] = event.move;
 }
 
-
 HHOOK MouseHookHandle;
 void printEvent(const MouseEvent& event) {
-    //std::cout << "Mouse X: " << event.mouseX << std::endl;
-    //std::cout << "Mouse Y: " << event.mouseY << std::endl;
-    //std::cout << "Mouse Wheel Delta: " << event.mouseWheelDelta << std::endl;
-    //std::cout << "Left Mouse Down: " << event.leftMouseDown << std::endl;
-    //std::cout << "Right Mouse Down: " << event.rightMouseDown << std::endl;
-    //std::cout << "Middle Mouse Down: " << event.middleMouseDown << std::endl;
-    //std::cout << "Double Click: " << event.doubleClick << std::endl;
-    //std::cout << "Move: " << event.move << std::endl;
-    //std::cout << std::endl;
-    std::cout << "mouse event detected\n";
+    std::cout << "Mouse X: " << event.mouseX << std::endl;
+    std::cout << "Mouse Y: " << event.mouseY << std::endl;
+    std::cout << "Mouse Wheel Delta: " << event.mouseWheelDelta << std::endl;
+    std::cout << "Left Mouse Down: " << event.leftMouseDown << std::endl;
+    std::cout << "Right Mouse Down: " << event.rightMouseDown << std::endl;
+    std::cout << "Middle Mouse Down: " << event.middleMouseDown << std::endl;
+    std::cout << "Double Click: " << event.doubleClick << std::endl;
+    std::cout << "Move: " << event.move << std::endl;
 }
-
-
 LRESULT CALLBACK MouseHook(int code, WPARAM wParam, LPARAM lParam) {
-    if (state == State::STOP) {
+    if (uiState != UIState::DISPLAY_IMAGE) {
         PostQuitMessage(0);
         UnhookWindowsHookEx(MouseHookHandle);
-        std::cout << "unhooked mouse\n";
         return 0;
     }
     const double screenRatio = serverScreenWidth * 1.0 / screenWidth;
     if (code == HC_ACTION) {
         MSLLHOOKSTRUCT* ms = (MSLLHOOKSTRUCT*)lParam;
         char buffer[BUF_SIZE];
-        //std::cout << wParam << std::endl;
-        MouseEvent event;
-
+        std::cout << wParam << std::endl;
         switch (wParam) {
         case WM_LBUTTONDOWN:
-            event.leftMouseDown = true;
+            mouseEvent.leftMouseDown = true;
             break;
         case WM_LBUTTONUP:
-            event.leftMouseDown = false;
+            mouseEvent.leftMouseDown = false;
             break;
         case WM_RBUTTONDOWN:
-            event.rightMouseDown = true;
+            mouseEvent.rightMouseDown = true;
             break;
         case WM_RBUTTONUP:
-            event.rightMouseDown = false;
+            mouseEvent.rightMouseDown = false;
             break;
         case WM_MBUTTONDOWN:
-            event.middleMouseDown = true;
+            mouseEvent.middleMouseDown = true;
             break;
         case WM_MBUTTONUP:
-            event.middleMouseDown = false;
+            mouseEvent.middleMouseDown = false;
             break;
         case WM_MOUSEMOVE:
-            event.move = true;
-            event.mouseX = (DWORD)(ms->pt.x * screenRatio);
-            event.mouseY = (DWORD)(ms->pt.y * screenRatio);
+            mouseEvent.move = true;
+            mouseEvent.mouseX = (DWORD)(ms->pt.x * screenRatio);
+            mouseEvent.mouseY = (DWORD)(ms->pt.y * screenRatio);
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
             break;
         case WM_MOUSEWHEEL:
-            event.mouseWheelDelta = GET_WHEEL_DELTA_WPARAM(ms->mouseData);
+            mouseEvent.mouseWheelDelta = GET_WHEEL_DELTA_WPARAM(ms->mouseData);
             break;
         case WM_LBUTTONDBLCLK:
-            event.doubleClick = true;
+            mouseEvent.doubleClick = true;
             break;
         default:
             break;
         }
-
         // Serialize the event and send it to the server
-        serializeEvent(event, buffer);
+        serializeEvent(mouseEvent, buffer);
+
         int sent;
         do {
             sent = send(mouseSocket, buffer, BUF_SIZE, 0);
-            printEvent(event);
+            //printEvent(mouseEvent);
+            std::cout << "mouse event detected.\n";
             if (sent == SOCKET_ERROR) {
                 int error = WSAGetLastError();
                 if (error != WSAEWOULDBLOCK) {
@@ -100,20 +95,11 @@ LRESULT CALLBACK MouseHook(int code, WPARAM wParam, LPARAM lParam) {
         } while (sent == SOCKET_ERROR);
 
         // Reset the state of the modifier keys if they are not being held down
-        if (event.leftMouseDown) {
-            event.leftMouseDown = false;
+        if (mouseEvent.doubleClick) {
+            mouseEvent.doubleClick = false;
         }
-        if (event.rightMouseDown) {
-            event.rightMouseDown = false;
-        }
-        if (event.middleMouseDown) {
-            event.middleMouseDown = false;
-        }
-        if (event.doubleClick) {
-            event.doubleClick = false;
-        }
-        if (event.move) {
-            event.move = false;
+        if (mouseEvent.move) {
+            mouseEvent.move = false;
         }
     }
 
@@ -128,12 +114,10 @@ void sendMouseEvents() {
 	}
 
 	MSG msg;
-    while(state == State::DISPLAY_IMAGE && GetMessage(&msg, NULL, 0, 0) != 0) {
-        std::cout << "mouseeeeeeeeeeeeeeeeeeee\n";
-        //GetMessage(&msg, NULL, 0, 0);
+    while (uiState == UIState::DISPLAY_IMAGE && GetMessage(&msg, NULL, 0, 0) != 0) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
-    std::cout << "mouse quit\n";
+    std::cout << "shut down mouse thread.\n";
 	//UnhookWindowsHookEx(MouseHookHandle);
 }

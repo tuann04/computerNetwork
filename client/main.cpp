@@ -31,27 +31,27 @@ SDL_Rect screenRect;
 
 SOCKET imageSocket, mouseSocket, keyboardSocket;
 
-State state = State::DISPLAY_CONNECT_MENU;
+UIState uiState = UIState::DISPLAY_CONNECT_MENU;
 ConnectionState connectState = ConnectionState::NOT_YET;
 DiscoverState discoverState = DiscoverState::NOT_YET;
 
 int main(int argc, char** argv) {
     initUI();
 
-    while (state != State::QUIT) {
+    while (uiState != UIState::QUIT) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
-                state = State::QUIT;
+                uiState = UIState::QUIT;
             }
             ImGui_ImplSDL2_ProcessEvent(&event);
         }
 
-        switch (state) {
-        case State::DISPLAY_CONNECT_MENU:
+        switch (uiState) {
+        case UIState::DISPLAY_CONNECT_MENU:
             displayConnectMenu();
             break;
 
-        case State::START_THREADS:
+        case UIState::START_THREADS:
             getServerScreenResolution();
 
             initClientSocket(mouseSocket, ip, mousePort);
@@ -68,33 +68,31 @@ int main(int argc, char** argv) {
                 imageThread.detach();
             }
 
-            state = State::DISPLAY_IMAGE;
+            uiState = UIState::DISPLAY_IMAGE;
             break;
 
-        case State::DISPLAY_IMAGE: break;
+        case UIState::DISPLAY_IMAGE: break;
 
-        case State::STOP:
-            //wait for all thread shut down
+        case UIState::STOP:
             std::this_thread::sleep_for(std::chrono::seconds(3));
             WSACleanup();
             closesocket(imageSocket);
             closesocket(mouseSocket);
             closesocket(keyboardSocket);
-            std::cout << "clean up tranmission data.\n";
             freeUI();
             SDL_Quit();
-            initUI();
-            state = State::DISPLAY_CONNECT_MENU;
+            std::cout << "Disconected.\n";
+            uiState = UIState::DISPLAY_CONNECT_MENU;
             connectState = ConnectionState::NOT_YET;
             discoverState = DiscoverState::NOT_YET;
-            break;
+            initUI();
         default:
             break;
         }
     }
 
     freeUI();
-    SDL_Quit();
+
     WSACleanup();
     closesocket(imageSocket);
     closesocket(mouseSocket);

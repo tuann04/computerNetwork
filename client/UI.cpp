@@ -29,7 +29,7 @@ void broadcastC(char *ip) {
 
 	SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0);
 	struct timeval tv;
-	tv.tv_sec = 1;  // 1 second timeout
+	tv.tv_sec = 5;
 	tv.tv_usec = 0;
 	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
@@ -60,7 +60,7 @@ void broadcastC(char *ip) {
 		std::pair<std::string, std::string> tmp(tmpIP, tmpName);
 		serversSet.insert(tmp);
 	}
-
+	closesocket(sock);
 }
 
 void initUI() {
@@ -136,7 +136,7 @@ void displayConnectMenu() {
 		}
 
 		if (ImGui::Button("Exit")) {
-			state = State::QUIT;
+			uiState = UIState::QUIT;
 		}
 
 		if (discoverState == DiscoverState::SUCCESS) {
@@ -156,7 +156,7 @@ void displayConnectMenu() {
 				ImGui::Text("Invalid IP address!");
 			}
 			else if (connectState == ConnectionState::SUCCESS) {
-				state = State::START_THREADS;
+				uiState = UIState::START_THREADS;
 			}
 		}
 		
@@ -176,16 +176,9 @@ void renderControlPanel() {
 
     ImGui::SetNextWindowSize(ImVec2(200, 100));
     if (ImGui::Begin("Control Panel", NULL, ImGuiWindowFlags_NoResize)) {
-		if (state == State::DISPLAY_IMAGE) {
-			if (ImGui::Button("STOP")) {
-				state = State::STOP;
-			}
-		}
-		else {
-			if (ImGui::Button("CONTINUE")) {
-				state = State::DISPLAY_IMAGE;
-			}
-		}
+        if (ImGui::Button("STOP")) {
+			uiState = UIState::STOP;
+        }
     }
     ImGui::End();
 
@@ -204,15 +197,16 @@ void renderImage(cv::Mat image) {
 }
 
 void receiveAndDisplayImage() {
-    while (state == State::DISPLAY_IMAGE) {
+    while (uiState == UIState::DISPLAY_IMAGE) {
 		cv::Mat image = receiveImage();
 
-		renderImage(image);
+        renderImage(image);
+		std::cout << "rendered image.\n";
 
 		renderControlPanel();
 
 		SDL_RenderPresent(renderer);
 	}
 	sendImageACK();
-	std::cout << "image quit\n";
+	std::cout << "shut down image thread.\n";
 }
