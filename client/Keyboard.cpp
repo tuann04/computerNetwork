@@ -23,9 +23,9 @@ HHOOK keyboardHookHandle;
 
 LRESULT CALLBACK keyboardHook(int code, WPARAM wParam, LPARAM lParam) {
     if (state == State::STOP) {
+        PostQuitMessage(0);
         UnhookWindowsHookEx(keyboardHookHandle);
         std::cout << "unhooked keyboard\n";
-        PostQuitMessage(0);
         return 0;
     }
     static bool ctrlPressed = false;
