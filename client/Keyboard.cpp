@@ -22,7 +22,11 @@ void serializeEvent(const KeyEvent& event, char* buffer) {
 HHOOK keyboardHookHandle;
 
 LRESULT CALLBACK keyboardHook(int code, WPARAM wParam, LPARAM lParam) {
+<<<<<<< HEAD
     if (uiState != UIState::DISPLAY_IMAGE) {
+=======
+    if (state == State::STOP) {
+>>>>>>> e86ce8e95f329ab4c2e524b429d106f43233c8ed
         PostQuitMessage(0);
         UnhookWindowsHookEx(keyboardHookHandle);
         std::cout << "unhooked keyboard\n";
