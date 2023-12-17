@@ -108,8 +108,8 @@ void displayControlPanel() {
     ImGui::SetWindowSize(ImVec2(200, 100));
     ImGui::SetNextWindowSize(ImVec2(200, 100));
     if (ImGui::Begin("Control Panel", NULL, ImGuiWindowFlags_NoResize)) {
-        if (ImGui::Button("Exit")) {
-            uiState = UIState::QUIT;
+        if (ImGui::Button("Disconnect")) {
+            uiState = UIState::STOP;
         }
     }
     ImGui::End();

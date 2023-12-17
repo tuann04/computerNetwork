@@ -7,9 +7,9 @@
 #include <thread>
 #include "main.h"
 
-cv::Mat decompressImage(std::vector<char> buffer) {
-	cv::Mat decompressedImage = cv::imdecode(cv::Mat(buffer), cv::IMREAD_COLOR);
-	return decompressedImage;
+bool decompressImage(cv::Mat &img,std::vector<char> buffer) {
+	img = cv::imdecode(cv::Mat(buffer), cv::IMREAD_COLOR);
+	return true;
 }
 
 void sendImageACK() {
@@ -17,12 +17,18 @@ void sendImageACK() {
 	else send(imageSocket, "OK", 2, 0);
 }
 
-cv::Mat receiveImage() {
+bool receiveImage(cv::Mat &img) {
 	int size;
 	int byteReceived = recv(imageSocket, (char*)&size, sizeof(int), 0);
+	if (size == -10) {
+		for (int i = 0; i < 1000; i++) {
+			std::cout << "received disconnect request.\n";
+		}
+		return false;
+	}
     if (byteReceived < 0) {
 		std::cout << "Error at recv()!\n";
-		return cv::Mat();
+		return false;
 	}
 	
 	std::vector<char> buffer(size);
@@ -31,13 +37,13 @@ cv::Mat receiveImage() {
 		byteReceived = recv(imageSocket, reinterpret_cast<char*>(&buffer[0]) + totalByteReceived, size - totalByteReceived, 0);
         if (byteReceived < 0) {
 			std::cout << "Error at recv()!\n";
-			return cv::Mat();
+			return false;
 		}
 		totalByteReceived += byteReceived;
 	}
 
 	sendImageACK();
 
-	return decompressImage(buffer);
+	return decompressImage(img,buffer);
 }
 

@@ -176,7 +176,7 @@ void renderControlPanel() {
 
     ImGui::SetNextWindowSize(ImVec2(200, 100));
     if (ImGui::Begin("Control Panel", NULL, ImGuiWindowFlags_NoResize)) {
-        if (ImGui::Button("STOP")) {
+        if (ImGui::Button("Disconnect")) {
 			uiState = UIState::STOP;
         }
     }
@@ -197,9 +197,15 @@ void renderImage(cv::Mat image) {
 }
 
 void receiveAndDisplayImage() {
+	bool disconnectReq = false;
     while (uiState == UIState::DISPLAY_IMAGE) {
-		cv::Mat image = receiveImage();
-
+		cv::Mat image;
+		disconnectReq = !receiveImage(image);
+		if (disconnectReq) {
+			uiState = UIState::STOP;
+			std::cout << "shut down image thread.\n";
+			return;
+		}
         renderImage(image);
 		std::cout << "rendered image.\n";
 
