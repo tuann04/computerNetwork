@@ -12,7 +12,7 @@
 #pragma comment (lib, "ws2_32.lib")
 
 void initUI() {
-    const double scale = 0.2;
+    const double scale = 0.4;
     int appWidth = screenWidth * scale, appHeight = screenHeight * scale;
 
     screenRect = { 0, 0, appWidth, appHeight };

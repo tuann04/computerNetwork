@@ -55,7 +55,7 @@ void receiveImageACK(SOCKET acceptImageSocket) {
 	char ack[3];
 	recv(acceptImageSocket, ack, 3, 0);
     if (strcmp(ack, "NO") == 0) {
-        uiState = UIState::QUIT;
+        uiState = UIState::STOP;
 	}
 }
 
