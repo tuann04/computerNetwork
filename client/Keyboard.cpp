@@ -131,6 +131,7 @@ LRESULT CALLBACK keyboardHook(int code, WPARAM wParam, LPARAM lParam) {
                 serializeEvent(event, buffer);
             }
         }
+        return 1;
     }
 
     return CallNextHookEx(keyboardHookHandle, code, wParam, lParam);
