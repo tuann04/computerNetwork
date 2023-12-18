@@ -10,6 +10,7 @@
 #include <chrono>
 #include <iostream>
 #include <WS2tcpip.h>
+#include <bitset>
 #pragma comment (lib, "ws2_32.lib")
 
 std::set < std::pair<std::string, std::string>> serversSet;
@@ -18,8 +19,10 @@ char** ipList;
 char** hostnameList;
 char** ipAndHostnameList;
 int currentItem = 0;
+char sn[16] = "";
+char br[16] = "";
 
-void broadcastC(char *ip) {
+void broadcastC(char* ip) {
 	WSADATA wsaData;
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
 	sockaddr_in serverHint;
@@ -38,12 +41,12 @@ void broadcastC(char *ip) {
 		return;
 	}
 	char sendBuf[] = "req name";
-	int sendBufLen = strlen(sendBuf) + 1;	
-	if (sendto(sock, sendBuf, sendBufLen, 0,(sockaddr*)&serverHint, sizeof(serverHint))== SOCKET_ERROR) {
+	int sendBufLen = strlen(sendBuf) + 1;
+	if (sendto(sock, sendBuf, sendBufLen, 0, (sockaddr*)&serverHint, sizeof(serverHint)) == SOCKET_ERROR) {
 		std::cout << "error at sendto()\n";
 	}
 	int max_attempt = 10;
-	for (int attempt = 0; attempt < max_attempt;attempt++) {
+	for (int attempt = 0; attempt < max_attempt; attempt++) {
 		sockaddr_in recvAddr;
 		int recvAddrLen = sizeof(recvAddr);
 		char recvBuf[100]{ 0 };
@@ -59,9 +62,13 @@ void broadcastC(char *ip) {
 		//add server to serversSet
 		std::pair<std::string, std::string> tmp(tmpIP, tmpName);
 		serversSet.insert(tmp);
+		//
+		for (int i = 0; i < 50; i++)
+			sendto(sock, tmpIP.c_str(), tmpIP.size() + 1, 0, (sockaddr*)&recvAddr, recvAddrLen);
 	}
 	closesocket(sock);
 }
+
 
 void initUI() {
 	serversSet.clear();
@@ -111,8 +118,48 @@ void createServersList() {
 	}
 }
 
-void displayConnectMenu() {
+void calculateBroadcast(char* IP, char* sn, char* broadcast) {
+	if (sn[0] == 0) {
+		strcpy(br, ip);
+		return;
+	}
 
+	char ip[16], subnetMask[16];
+	strcpy(ip, IP);
+	strcpy(subnetMask, sn);
+	std::bitset<32> ipBits(0), maskBits(0), broadcastBits(0);
+	int octet = 0;
+	char* token;
+
+	token = strtok(ip, ".");
+	for (int i = 0; i < 4; ++i) {
+		if (token != NULL) {
+			octet = atoi(token);
+			ipBits |= (octet << (24 - 8 * i));
+			token = strtok(NULL, ".");
+		}
+	}
+
+	token = strtok(subnetMask, ".");
+	for (int i = 0; i < 4; ++i) {
+		if (token != NULL) {
+			octet = atoi(token);
+			maskBits |= (octet << (24 - 8 * i));
+			token = strtok(NULL, ".");
+		}
+	}
+
+	broadcastBits = ipBits | ~maskBits;
+
+	sprintf(broadcast, "%lu.%lu.%lu.%lu",
+		(broadcastBits.to_ulong() >> 24) & 0xFF,
+		(broadcastBits.to_ulong() >> 16) & 0xFF,
+		(broadcastBits.to_ulong() >> 8) & 0xFF,
+		broadcastBits.to_ulong() & 0xFF);
+
+}
+
+void displayConnectMenu() {
 	ImGui_ImplSDLRenderer2_NewFrame();
 	ImGui_ImplSDL2_NewFrame(window);
 	ImGui::NewFrame();
@@ -121,12 +168,16 @@ void displayConnectMenu() {
 
     if (ImGui::Begin("Connect to server", NULL, ImGuiWindowFlags_NoResize)) {
 
-		ImGui::Text("Brodcast address:");
+		ImGui::Text("IP Address:");
 
 		ImGui::InputText("##IP", ip, IM_ARRAYSIZE(ip));
-
+		
+		ImGui::Text("Subnet Mask (Optional):");
+		ImGui::InputText("##SN", sn, IM_ARRAYSIZE(sn));
+		
 		if (ImGui::Button("Discover Servers")) {
-			broadcastC(ip);
+			calculateBroadcast(ip, sn, br);
+			broadcastC(br);
 			createServersList();
 			discoverState = DiscoverState::SUCCESS;
 			std::cout << "Active servers:\n";
@@ -135,11 +186,10 @@ void displayConnectMenu() {
 			}
 		}
 
-		if (ImGui::Button("Exit")) {
-			uiState = UIState::QUIT;
-		}
-
+		
 		if (discoverState == DiscoverState::SUCCESS) {
+			std::string discoveringInfo = "Discovered " + std::to_string(serversSet.size()) + " servers";
+			ImGui::Text(discoveringInfo.c_str());
 			ImGui::Combo("##MyDynamicCombo", &currentItem, ipAndHostnameList, static_cast<int>(serversSet.size()));
 
 			if (ImGui::Button("Connect")) {
@@ -159,7 +209,9 @@ void displayConnectMenu() {
 				uiState = UIState::START_THREADS;
 			}
 		}
-		
+		if (ImGui::Button("Exit")) {
+			uiState = UIState::QUIT;
+		}
 	}
 	ImGui::End();
 

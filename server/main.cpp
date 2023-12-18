@@ -39,8 +39,11 @@ SDL_Event event;
 UIState uiState = UIState::DISPLAY_CONNECTION_MENU;
 BindingState bindingState = BindingState::BINDING;
 ConnectionState connectionState = ConnectionState::NOT_YET;
+DiscoveryState discoveryState = DiscoveryState::NOT_YET;
+
 
 int main(int argc, char** agrv) {
+    broadcastS();
     initUI();
     initHeaderScreenshot(header);
 
@@ -91,6 +94,7 @@ int main(int argc, char** agrv) {
             uiState = UIState::DISPLAY_CONNECTION_MENU;
             connectionState = ConnectionState::NOT_YET;
             bindingState = BindingState::BINDING;
+            discoveryState = DiscoveryState::NOT_YET;
             initUI();
             initHeaderScreenshot(header);
         }

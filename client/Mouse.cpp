@@ -102,6 +102,9 @@ LRESULT CALLBACK MouseHook(int code, WPARAM wParam, LPARAM lParam) {
         if (mouseEvent.move) {
             mouseEvent.move = false;
         }
+        if (mouseEvent.mouseWheelDelta != 0) {
+			mouseEvent.mouseWheelDelta = 0;
+		}
     }
 
     return CallNextHookEx(MouseHookHandle, code, wParam, lParam);
