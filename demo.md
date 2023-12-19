@@ -9,3 +9,5 @@
 -Tiếp theo là phần demo truyền nhận tín hiệu chuột và bàn phím giữa 2 máy.
 
 https://docs.google.com/document/d/1Wbe59N0tH_vrTRZuO4byMvYx607qdwBpT_YXpNQOk78/edit?fbclid=IwAR3ucKWNGG0X-4_g6e_xrzdkjYvX8CwIOjH2HniJgD9IHbKnulaN3mkKH5E
+
+https://docs.google.com/document/d/1T2SrdAx2evfO3tLrs3zPxHc22CFOwQfTkFeUT32S8hk/edit?fbclid=IwAR0nIX60_ZCDfnwMFUVXye75NTKxgwiimIr2OQPWicsIEqPmp_5SwMNp7Yw
